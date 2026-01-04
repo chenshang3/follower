@@ -14,6 +14,7 @@ qt_standard_project_setup()
 add_executable(ShortVideoFollow
     src/main.cpp
     src/mainwindow.cpp
+    src/userdetailwindow.cpp
     src/model/seqlist.cpp
     src/model/linkedlist.cpp
     ui/mainwindow.ui

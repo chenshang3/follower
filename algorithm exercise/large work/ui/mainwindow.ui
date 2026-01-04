@@ -42,10 +42,30 @@
        </widget>
       </item>
       <item>
-       <widget class="QPushButton" name="btnFind">
-        <property name="text"><string>查找</string></property>
+       <widget class="QPushButton" name="btnFindSeq">
+        <property name="text"><string>查找(顺序)</string></property>
        </widget>
       </item>
+      <item>
+       <widget class="QPushButton" name="btnFindLink">
+        <property name="text"><string>查找(链表)</string></property>
+       </widget>
+      </item>
+    <item>
+     <widget class="QPushButton" name="btn_generate">
+      <property name="text"><string>生成测试数据</string></property>
+     </widget>
+    </item>
+    <item>
+     <widget class="QPushButton" name="btn_benchmark">
+      <property name="text"><string>性能对比</string></property>
+     </widget>
+    </item>
+    <item>
+     <widget class="QPushButton" name="btn_findAndJump">
+      <property name="text"><string>查找并跳转</string></property>
+     </widget>
+    </item>
      </layout>
     </item>
     <item>

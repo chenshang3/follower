@@ -16,6 +16,11 @@ private slots:
     void onAddClicked();
     void onRemoveClicked();
     void onFindClicked();
+    void findUserSeqList();
+    void findUserLinkedList();
+    void findAndJump();
+    void generateTestUsers(int count);
+    void benchmarkSearch(int numTests);
     void onPrevPageClicked();
     void onNextPageClicked();
 private:
@@ -25,4 +30,5 @@ private:
     int currentPage = 0;
     int pageSize = 10;
     void refreshTable();
+    class UserDetailWindow *detailWindow = nullptr;
 };
