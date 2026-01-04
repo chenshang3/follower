@@ -1,267 +1,166 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
-#include "model/seqlist.h"
-#include "model/linkedlist.h"
-#include "userdetailwindow.h"
 #include <QMessageBox>
 #include <QTableWidgetItem>
-#include <QDebug>
 #include <chrono>
-#include <QRandomGenerator>
+#include <QElapsedTimer>
 
-MainWindow::MainWindow(QWidget *parent) :
-    QMainWindow(parent),
-    ui(new Ui::MainWindow)
+MainWindow::MainWindow(QWidget *parent)
+    : QMainWindow(parent)
+    , ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
-    connect(ui->btnAdd, &QPushButton::clicked, this, &MainWindow::onAddClicked);
-    connect(ui->btnRemove, &QPushButton::clicked, this, &MainWindow::onRemoveClicked);
-    // 新增：顺序表与链表查找按钮连接
-    if (ui->btnFindSeq)
-        connect(ui->btnFindSeq, &QPushButton::clicked, this, &MainWindow::findUserSeqList);
-    if (ui->btnFindLink)
-        connect(ui->btnFindLink, &QPushButton::clicked, this, &MainWindow::findUserLinkedList);
-    if (ui->btn_findAndJump)
-        connect(ui->btn_findAndJump, &QPushButton::clicked, this, &MainWindow::findAndJump);
-    qDebug() << "connect status: btn_findAndJump" << (ui->btn_findAndJump != nullptr);
-    // 生成与基准按钮连接
-    if (ui->btn_generate)
-        connect(ui->btn_generate, &QPushButton::clicked, [this](){ qDebug() << "btn_generate clicked"; generateTestUsers(10000); });
-    if (ui->btn_benchmark)
-        connect(ui->btn_benchmark, &QPushButton::clicked, [this](){ qDebug() << "btn_benchmark clicked"; benchmarkSearch(1000); });
-    connect(ui->btnPrev, &QPushButton::clicked, this, &MainWindow::onPrevPageClicked);
-    connect(ui->btnNext, &QPushButton::clicked, this, &MainWindow::onNextPageClicked);
-    // 按回车也触发添加操作（方便用户直接回车提交）
-    connect(ui->lineEditID, &QLineEdit::returnPressed, this, &MainWindow::onAddClicked);
-    connect(ui->lineEditName, &QLineEdit::returnPressed, this, &MainWindow::onAddClicked);
+
+    // 生成测试数据
+    connect(ui->btnGen, &QPushButton::clicked, this, &MainWindow::generateUsers);
+
+    // 顺序表查找
+    connect(ui->btnFindSeq, &QPushButton::clicked, this, &MainWindow::findBySeqList);
+
+    // 链表查找
+    connect(ui->btnFindLink, &QPushButton::clicked, this, &MainWindow::findByLinkedList);
 }
 
-MainWindow::~MainWindow() { delete ui; }
-
-void MainWindow::onAddClicked() {
-    QString idText = ui->lineEditID->text().trimmed();
-    QString name = ui->lineEditName->text().trimmed();
-    if(idText.isEmpty()) {
-        QMessageBox::information(this, "提示", "请输入ID");
-        return;
-    }
-    int id = idText.toInt();
-    User u{id, name.toStdString()};
-    seqList.add(u);
-    linkedList.add(u);
-    refreshTable();
-
-    // 清空输入并给出提示
-    ui->lineEditID->clear();
-    ui->lineEditName->clear();
-    QMessageBox::information(this, "提示", "已添加用户 " + QString::number(id));
-}
-
-void MainWindow::onRemoveClicked() {
-    int id = ui->lineEditID->text().toInt();
-    bool removedSeq = seqList.remove(id);
-    bool removedLink = linkedList.remove(id);
-    if(!removedSeq) QMessageBox::information(this, "提示", "ID不存在");
-    refreshTable();
-}
-
-void MainWindow::onFindClicked() {
-    int id = ui->lineEditID->text().toInt();
-    User* u = seqList.find(id);
-    if(u) QMessageBox::information(this, "查找结果", QString::fromStdString(u->name));
-    else QMessageBox::information(this, "查找结果", "未找到");
-}
-
-// 顺序表查找（遍历 vector）
-void MainWindow::findUserSeqList()
+MainWindow::~MainWindow()
 {
-    QString userIDStr = ui->lineEditID->text().trimmed();
-    if(userIDStr.isEmpty()){
-        QMessageBox::warning(this, "提示", "请输入用户ID！");
-        return;
-    }
-    int id = userIDStr.toInt();
-    auto start = std::chrono::high_resolution_clock::now();
-
-    bool found = false;
-    auto users = seqList.list();
-    for(const auto &u : users){
-        if(u.id == id){ found = true; break; }
-    }
-
-    auto end = std::chrono::high_resolution_clock::now();
-    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
-
-    ui->lineEditID->clear();
-
-    QMessageBox::information(this, "顺序表查找结果",
-                             QString("用户 %1 %2\n耗时: %3 微秒")
-                                     .arg(userIDStr)
-                                     .arg(found ? "存在" : "不存在")
-                                     .arg(duration));
+    delete ui;
 }
 
-// 链表查找（遍历链表）
-void MainWindow::findUserLinkedList()
+void MainWindow::refreshUserTable(const std::vector<User>& users)
 {
-    QString userIDStr = ui->lineEditID->text().trimmed();
-    if(userIDStr.isEmpty()){
-        QMessageBox::warning(this, "提示", "请输入用户ID！");
-        return;
-    }
-    int id = userIDStr.toInt();
-    auto start = std::chrono::high_resolution_clock::now();
+    ui->tableWidget->clearContents();
+    ui->tableWidget->setRowCount(users.size());
 
-    bool found = false;
-    Node* n = linkedList.find(id);
-    if(n) found = true;
+    for (int row = 0; row < (int)users.size(); ++row) {
+        const User& u = users[row];
 
-    auto end = std::chrono::high_resolution_clock::now();
-    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
+        ui->tableWidget->setItem(
+            row, 0,
+            new QTableWidgetItem(QString::number(u.id))
+        );
 
-    ui->lineEditID->clear();
-
-    QMessageBox::information(this, "链表查找结果",
-                             QString("用户 %1 %2\n耗时: %3 微秒")
-                                     .arg(userIDStr)
-                                     .arg(found ? "存在" : "不存在")
-                                     .arg(duration));
-}
-
-// 查找并跳转到用户详情（ID 或 昵称）
-void MainWindow::findAndJump()
-{
-    qDebug() << "findAndJump clicked";
-    QString keyword = ui->lineEditID->text().trimmed();
-    if(keyword.isEmpty()){
-        QMessageBox::warning(this, "提示", "请输入用户ID或昵称！");
-        return;
-    }
-
-    // 先尝试按 ID 查找
-    User* pUser = nullptr;
-    bool isNumber = false;
-    int id = keyword.toInt(&isNumber);
-    if(isNumber){
-        pUser = seqList.find(id); // pointer into internal storage if exists
-        if(!pUser){
-            Node* n = linkedList.find(id);
-            if(n) pUser = &n->data;
-        }
-    }
-
-    // 如果还没找到，按昵称查找（优先 seqList，再链表）
-    if(!pUser){
-        std::string nameKey = keyword.toStdString();
-        pUser = seqList.findByName(nameKey);
-        if(!pUser){
-            Node* cur = linkedList.headNode();
-            while(cur){
-                if(QString::fromStdString(cur->data.name) == keyword){ pUser = &cur->data; break; }
-                cur = cur->next;
-            }
-        }
-    }
-
-    // 清空并恢复焦点
-    ui->lineEditID->clear();
-    ui->lineEditID->setEnabled(true);
-    ui->lineEditID->setFocus();
-
-    if(pUser){
-        if(!detailWindow) detailWindow = new UserDetailWindow(this);
-        detailWindow->setUser(*pUser);
-        detailWindow->show();
-        detailWindow->raise();
-        detailWindow->activateWindow();
-        qDebug() << "findAndJump: found user id" << pUser->id << "name" << QString::fromStdString(pUser->name);
-    } else {
-        QMessageBox::information(this, "查找结果", "未找到对应用户！");
-        qDebug() << "findAndJump: not found";
+        ui->tableWidget->setItem(
+            row, 1,
+            new QTableWidgetItem(QString::fromStdString(u.name))
+        );
     }
 }
 
-// 批量生成测试用户（同时填充顺序表与链表）
-void MainWindow::generateTestUsers(int count)
+// -------------------- 生成测试数据 --------------------
+void MainWindow::generateUsers()
 {
-    qDebug() << "generateTestUsers start" << count;
     seqList.clear();
     linkedList.clear();
 
-    for(int i = 0; i < count; ++i){
+    const int N = 1000;
+
+    for (int i = 1; i < N; ++i) {
         User u;
         u.id = i;
-        u.name = std::string("User") + std::to_string(i);
+        u.name = "user_" + std::to_string(i);
+
         seqList.add(u);
         linkedList.add(u);
     }
 
-    QMessageBox::information(this, "生成完成",
-                             QString("已生成 %1 个测试用户").arg(count));
-    qDebug() << "generateTestUsers done" << count;
-    // 生成后刷新表格以在 UI 中展示数据
-    refreshTable();
+    refreshUserTable(seqList.list());
+
+    QMessageBox::information(
+        this,
+        "完成",
+        QString("成功生成 %1 条测试数据").arg(N)
+    );
 }
 
-// 基准测试：随机查找 numTests 次，统计平均耗时
-void MainWindow::benchmarkSearch(int numTests)
+// -------------------- 顺序表查找 --------------------
+void MainWindow::findBySeqList()
 {
-    int dataSize = seqList.size();
-    if(dataSize == 0 || linkedList.size() == 0){
-        QMessageBox::warning(this, "警告", "请先生成用户！");
+    bool ok;
+    int targetId = ui->lineEditID->text().toInt(&ok);
+
+    if (!ok) {
+        QMessageBox::warning(this, "错误", "请输入合法 ID");
         return;
     }
 
-    qint64 seqTotal = 0;
-    qint64 linkTotal = 0;
+    auto start = std::chrono::high_resolution_clock::now();
+    User* u = seqList.find(targetId);
+    auto end = std::chrono::high_resolution_clock::now();
 
-    for(int i = 0; i < numTests; ++i){
-        int idx = QRandomGenerator::global()->bounded(dataSize);
-
-        // 顺序表查找
-        auto startSeq = std::chrono::high_resolution_clock::now();
-        auto users = seqList.list();
-        for(const auto &u : users){ if(u.id == idx) break; }
-        auto endSeq = std::chrono::high_resolution_clock::now();
-        seqTotal += std::chrono::duration_cast<std::chrono::microseconds>(endSeq - startSeq).count();
-
-        // 链表查找
-        auto startLink = std::chrono::high_resolution_clock::now();
-        Node* cur = linkedList.headNode();
-        while(cur){ if(cur->data.id == idx) break; cur = cur->next; }
-        auto endLink = std::chrono::high_resolution_clock::now();
-        linkTotal += std::chrono::duration_cast<std::chrono::microseconds>(endLink - startLink).count();
+    if (!u) {
+        QMessageBox::information(this, "结果", "未找到用户");
+        return;
     }
 
-    double avgSeq = double(seqTotal) / numTests;
-    double avgLink = double(linkTotal) / numTests;
+    // 刷新表格（顺序表）
+    auto users = seqList.list();
+    refreshUserTable(users);
 
-    QMessageBox::information(this, "查找性能对比",
-                             QString("数据量: %1 用户, 测试次数: %2\n\n顺序表平均查找耗时: %3 微秒\n链表平均查找耗时: %4 微秒")
-                                     .arg(dataSize)
-                                     .arg(numTests)
-                                     .arg(avgSeq, 0, 'f', 2)
-                                     .arg(avgLink, 0, 'f', 2));
+    // 定位到对应行
+    for (int i = 0; i < (int)users.size(); ++i) {
+        if (users[i].id == targetId) {
+            ui->tableWidget->selectRow(i);
+            break;
+        }
+    }
+
+    auto cost = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
+    QMessageBox::information(this, "顺序表查找", QString("查找耗时：%1 ns").arg(cost));
+
 }
 
-void MainWindow::onPrevPageClicked() {
-    if(currentPage > 0) currentPage--;
-    refreshTable();
-}
 
-void MainWindow::onNextPageClicked() {
-    currentPage++;
-    refreshTable();
-}
+// -------------------- 链表查找 --------------------
+void MainWindow::findByLinkedList()
+{
+    QString input = ui->lineEditID->text().trimmed();
+    ui->lineEditID->clear();
 
-void MainWindow::refreshTable() {
-    auto list = seqList.list();
-    int start = currentPage * pageSize;
-    int end = std::min((int)list.size(), start + pageSize);
-    int rows = std::max(0, end - start);
-    ui->tableWidget->setRowCount(rows);
-    for(int i=start;i<end;i++){
-        ui->tableWidget->setItem(i-start,0,new QTableWidgetItem(QString::number(list[i].id)));
-        ui->tableWidget->setItem(i-start,1,new QTableWidgetItem(QString::fromStdString(list[i].name)));
+    if (input.isEmpty()) {
+        QMessageBox::warning(this, "提示", "请输入 ID");
+        return;
+    }
+
+    bool ok = false;
+    int targetId = input.toInt(&ok);
+
+    if (!ok) {
+        QMessageBox::warning(this, "错误", "链表仅支持按 ID 查找");
+        return;
+    }
+
+    QElapsedTimer timer;
+    timer.start();
+
+    Node* node = linkedList.find(targetId);
+
+    qint64 elapsed = timer.nsecsElapsed();
+
+    auto users = linkedList.list();
+    refreshUserTable(users);  // 🔹 刷新表格
+
+    if (node) {
+        // 定位行
+        for (int i = 0; i < (int)users.size(); ++i) {
+            if (users[i].id == targetId) {
+                ui->tableWidget->selectRow(i);
+                break;
+            }
+        }
+
+        QMessageBox::information(
+            this,
+            "链表查找成功",
+            QString("ID: %1\nName: %2\n耗时: %3 ns")
+                .arg(node->data.id)
+                .arg(QString::fromStdString(node->data.name))
+                .arg(elapsed)
+        );
+    } else {
+        QMessageBox::information(
+            this,
+            "链表查找失败",
+            QString("未找到，耗时 %1 ns").arg(elapsed)
+        );
     }
 }

@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>600</width>
-    <height>400</height>
+    <width>702</width>
+    <height>441</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -33,39 +33,39 @@
       </item>
       <item>
        <widget class="QPushButton" name="btnAdd">
-        <property name="text"><string>添加</string></property>
+        <property name="text">
+         <string>添加</string>
+        </property>
        </widget>
       </item>
       <item>
        <widget class="QPushButton" name="btnRemove">
-        <property name="text"><string>取消</string></property>
+        <property name="text">
+         <string>取消</string>
+        </property>
        </widget>
       </item>
       <item>
        <widget class="QPushButton" name="btnFindSeq">
-        <property name="text"><string>查找(顺序)</string></property>
+        <property name="text">
+         <string>查找(顺序)</string>
+        </property>
        </widget>
       </item>
       <item>
        <widget class="QPushButton" name="btnFindLink">
-        <property name="text"><string>查找(链表)</string></property>
+        <property name="text">
+         <string>查找(链表)</string>
+        </property>
        </widget>
       </item>
-    <item>
-     <widget class="QPushButton" name="btn_generate">
-      <property name="text"><string>生成测试数据</string></property>
-     </widget>
-    </item>
-    <item>
-     <widget class="QPushButton" name="btn_benchmark">
-      <property name="text"><string>性能对比</string></property>
-     </widget>
-    </item>
-    <item>
-     <widget class="QPushButton" name="btn_findAndJump">
-      <property name="text"><string>查找并跳转</string></property>
-     </widget>
-    </item>
+      <item>
+       <widget class="QPushButton" name="btnGen">
+        <property name="text">
+         <string>生成测试数据</string>
+        </property>
+       </widget>
+      </item>
      </layout>
     </item>
     <item>
@@ -90,21 +90,31 @@
       <item>
        <spacer name="horizontalSpacer">
         <property name="orientation">
-         <enum>Qt::Horizontal</enum>
+         <enum>Qt::Orientation::Horizontal</enum>
         </property>
         <property name="sizeType">
-         <enum>QSizePolicy::Expanding</enum>
+         <enum>QSizePolicy::Policy::Expanding</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>0</width>
+          <height>0</height>
+         </size>
         </property>
        </spacer>
       </item>
       <item>
        <widget class="QPushButton" name="btnPrev">
-        <property name="text"><string>上一页</string></property>
+        <property name="text">
+         <string>上一页</string>
+        </property>
        </widget>
       </item>
       <item>
        <widget class="QPushButton" name="btnNext">
-        <property name="text"><string>下一页</string></property>
+        <property name="text">
+         <string>下一页</string>
+        </property>
        </widget>
       </item>
      </layout>
@@ -114,5 +124,4 @@
  </widget>
  <resources/>
  <connections/>
- <customwidgets/>
 </ui>
