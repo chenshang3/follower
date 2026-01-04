@@ -1,0 +1,26 @@
+# Build artifacts
+build/
+*.exe
+*.dll
+*.obj
+*.o
+*.lib
+
+# Qt deployment artifacts
+platforms/
+imageformats/
+styles/
+translations/
+
+# IDE / OS
+.vscode/
+*.user
+*.suo
+*.log
+__pycache__/
+
+# CMake
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile
