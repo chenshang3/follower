@@ -1,28 +1,32 @@
+// mainwindow.h
 #pragma once
+
 #include <QMainWindow>
 #include "model/seqlist.h"
 #include "model/linkedlist.h"
+
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
 QT_END_NAMESPACE
 
-class MainWindow : public QMainWindow {
+class MainWindow : public QMainWindow
+{
     Q_OBJECT
+
 public:
-    MainWindow(QWidget *parent = nullptr);
+    explicit MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
+
 private slots:
-    void onAddClicked();
-    void onRemoveClicked();
-    void onFindClicked();
-    void onPrevPageClicked();
-    void onNextPageClicked();
+    void generateUsers();        // 生成测试数据
+    void findBySeqList();        // 顺序表查找
+    void findByLinkedList();     // 链表查找
+
 private:
     Ui::MainWindow *ui;
+
     SeqList seqList;
     LinkedList linkedList;
-    int currentPage = 0;
-    int pageSize = 10;
-    void refreshTable();
+    void refreshUserTable(const std::vector<User>& users);
 };

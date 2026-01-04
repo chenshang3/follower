@@ -10,6 +10,27 @@ LinkedList::~LinkedList() {
     }
 }
 
+void LinkedList::clear() {
+    Node* cur = head;
+    while(cur) {
+        Node* tmp = cur;
+        cur = cur->next;
+        delete tmp;
+    }
+    head = nullptr;
+}
+
+int LinkedList::size() const {
+    int cnt = 0;
+    Node* cur = head;
+    while(cur) { cnt++; cur = cur->next; }
+    return cnt;
+}
+
+Node* LinkedList::headNode() const {
+    return head;
+}
+
 void LinkedList::add(const User& u) {
     Node* n = new Node(u);
     n->next = nullptr;
