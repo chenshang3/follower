@@ -27,8 +27,4 @@ private:
     Ui::MainWindow *ui;
     SeqList seqList;
     LinkedList linkedList;
-    int currentPage = 0;
-    int pageSize = 10;
-    void refreshTable();
-    class UserDetailWindow *detailWindow = nullptr;
 };
