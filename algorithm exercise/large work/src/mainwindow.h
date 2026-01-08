@@ -22,6 +22,7 @@ private slots:
     void generateUsers();        // 生成测试数据
     void findBySeqList();        // 顺序表查找
     void findByLinkedList();     // 链表查找
+    void removeUser();           // 删除用户
 
 private:
     Ui::MainWindow *ui;

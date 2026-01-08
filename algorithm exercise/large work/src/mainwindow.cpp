@@ -20,6 +20,9 @@ MainWindow::MainWindow(QWidget *parent)
     // 链表查找
     connect(ui->btnFindLink, &QPushButton::clicked, this, &MainWindow::findByLinkedList);
     
+    // 取消关注用户
+    connect(ui->btnRemove, &QPushButton::clicked, this, &MainWindow::removeUser);
+
     // 分页按钮
     connect(ui->btnNext, &QPushButton::clicked, this, [this]() {
         int totalPages = (currentUsers.size() + pageSize - 1) / pageSize;
@@ -241,6 +244,76 @@ void MainWindow::findByLinkedList()
             this,
             "链表查找失败",
             QString("未找到，耗时 %1 ns").arg(elapsed)
+        );
+    }
+}
+
+// -------------------- 取消关注功能 --------------------
+void MainWindow::removeUser()
+{
+    // 获取输入的用户ID
+    QString input = ui->lineEditID->text().trimmed();
+    
+    if (input.isEmpty()) {
+        QMessageBox::warning(this, "提示", "请输入要取消关注的用户ID");
+        return;
+    }
+
+    bool ok = false;
+    int targetId = input.toInt(&ok);
+    
+    if (!ok) {
+        QMessageBox::warning(this, "错误", "请输入合法的数字ID");
+        return;
+    }
+
+    // 记录开始时间用于性能测试
+    QElapsedTimer timer;
+    timer.start();
+    
+    // 尝试从顺序表中删除
+    bool seqRemoved = seqList.remove(targetId);
+    qint64 seqElapsed = timer.nsecsElapsed();
+    
+    // 重新计时
+    timer.restart();
+    
+    // 尝试从链表中删除
+    bool linkRemoved = linkedList.remove(targetId);
+    qint64 linkElapsed = timer.nsecsElapsed();
+    
+    if (seqRemoved && linkRemoved) {
+        // 更新显示的数据
+        currentUsers = seqList.list();  // 使用顺序表的数据更新显示
+        
+        // 如果删除后当前页没有数据且不是第一页，则跳转到前一页
+        if (currentPage > 0 && currentPage * pageSize >= (int)currentUsers.size()) {
+            currentPage--;
+        }
+        
+        refreshUserTable();
+        
+        QMessageBox::information(
+            this,
+            "取消关注成功",
+            QString("已成功取消关注用户ID: %1\n\n顺序表删除耗时: %2 ns\n链表删除耗时: %3 ns")
+                .arg(targetId)
+                .arg(seqElapsed)
+                .arg(linkElapsed)
+        );
+    } else if (!seqRemoved && !linkRemoved) {
+        QMessageBox::warning(
+            this,
+            "取消关注失败",
+            QString("未找到用户ID: %1\n请检查输入是否正确")
+                .arg(targetId)
+        );
+    } else {
+        // 这种情况不应该发生，但为了健壮性还是处理一下
+        QMessageBox::warning(
+            this,
+            "系统错误",
+            "数据不一致：在一个数据结构中找到用户，但在另一个中没有找到"
         );
     }
 }
