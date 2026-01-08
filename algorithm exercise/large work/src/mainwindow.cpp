@@ -19,19 +19,38 @@ MainWindow::MainWindow(QWidget *parent)
 
     // 链表查找
     connect(ui->btnFindLink, &QPushButton::clicked, this, &MainWindow::findByLinkedList);
+    
+    // 分页按钮
+    connect(ui->btnNext, &QPushButton::clicked, this, [this]() {
+        int totalPages = (currentUsers.size() + pageSize - 1) / pageSize;
+        if (currentPage < totalPages - 1) {
+            ++currentPage;
+            refreshUserTable();
+        }
+    });
+
+    connect(ui->btnPrev, &QPushButton::clicked, this, [this]() {
+        if (currentPage > 0) {
+            --currentPage;
+            refreshUserTable();
+        }
+    });
+    
     // 夜间模式切换
     connect(ui->btnTheme, &QPushButton::clicked, this, [this]() {
-    darkModeEnabled = !darkModeEnabled;
+        darkModeEnabled = !darkModeEnabled;
 
-    if (darkModeEnabled) {
-        applyDarkTheme();
-        ui->btnTheme->setText(QStringLiteral("🌙 夜间模式"));
-    } else {
-        applyLightTheme();
-        ui->btnTheme->setText(QStringLiteral("☀️ 日间模式"));
-    }
-});
-
+        if (darkModeEnabled) {
+            applyDarkTheme();
+            ui->btnTheme->setText(QStringLiteral("🌙 夜间模式"));
+        } else {
+            applyLightTheme();
+            ui->btnTheme->setText(QStringLiteral("☀️ 日间模式"));
+        }
+    });
+    
+    // 更新页面显示
+    updatePageInfo();
 }
 
 MainWindow::~MainWindow()
@@ -39,13 +58,18 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
-void MainWindow::refreshUserTable(const std::vector<User>& users)
+void MainWindow::refreshUserTable()
 {
-    ui->tableWidget->clearContents();
-    ui->tableWidget->setRowCount(users.size());
+    int total = static_cast<int>(currentUsers.size());
+    int start = currentPage * pageSize;
+    int end = std::min(start + pageSize, total);
 
-    for (int row = 0; row < (int)users.size(); ++row) {
-        const User& u = users[row];
+    ui->tableWidget->clearContents();
+    ui->tableWidget->setRowCount(end - start);
+
+    for (int i = start; i < end; ++i) {
+        int row = i - start;
+        const User& u = currentUsers[i];
 
         ui->tableWidget->setItem(
             row, 0,
@@ -57,6 +81,28 @@ void MainWindow::refreshUserTable(const std::vector<User>& users)
             new QTableWidgetItem(QString::fromStdString(u.name))
         );
     }
+    
+    // 更新页面信息
+    updatePageInfo();
+}
+
+void MainWindow::updatePageInfo()
+{
+    int totalPages = (currentUsers.size() + pageSize - 1) / pageSize;
+    if (totalPages == 0) totalPages = 1;
+    
+    int currentPageDisplay = currentPage + 1; // 显示给用户的页码从1开始
+    
+    ui->labelPageInfo->setText(
+        QString("第 %1/%2 页，共 %3 条")
+            .arg(currentPageDisplay)
+            .arg(totalPages)
+            .arg(currentUsers.size())
+    );
+    
+    // 更新按钮状态
+    ui->btnPrev->setEnabled(currentPage > 0);
+    ui->btnNext->setEnabled(currentPage < totalPages - 1);
 }
 
 // -------------------- 生成测试数据 --------------------
@@ -76,7 +122,9 @@ void MainWindow::generateUsers()
         linkedList.add(u);
     }
 
-    refreshUserTable(seqList.list());
+    currentUsers = seqList.list();
+    currentPage = 0;
+    refreshUserTable();
 
     QMessageBox::information(
         this,
@@ -106,28 +154,37 @@ void MainWindow::findBySeqList()
     }
 
     // 刷新表格（顺序表）
-    auto users = seqList.list();
-    refreshUserTable(users);
-
-    // 定位到对应行
-    for (int i = 0; i < (int)users.size(); ++i) {
-        if (users[i].id == targetId) {
-            ui->tableWidget->selectRow(i);
+    currentUsers = seqList.list();  // 修正这里：使用 seqList.list()
+    
+    // 找到目标在列表中的位置，计算应显示在第几页
+    int foundIndex = -1;
+    for (int i = 0; i < (int)currentUsers.size(); ++i) {
+        if (currentUsers[i].id == targetId) {
+            foundIndex = i;
             break;
         }
     }
+    
+    if (foundIndex != -1) {
+        currentPage = foundIndex / pageSize;
+        refreshUserTable();
+        
+        // 定位到对应行（在当前页中的行号）
+        int rowInPage = foundIndex % pageSize;
+        ui->tableWidget->selectRow(rowInPage);
+    }
 
     auto cost = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
-    QMessageBox::information(this, "顺序表查找", QString("查找耗时：%1 ns").arg(cost));
-
+    QMessageBox::information(this, "顺序表查找", 
+        QString("查找耗时：%1 ns\n已跳转到第%2页")
+            .arg(cost)
+            .arg(currentPage + 1)); // 页码从1开始显示
 }
-
 
 // -------------------- 链表查找 --------------------
 void MainWindow::findByLinkedList()
 {
     QString input = ui->lineEditID->text().trimmed();
-    ui->lineEditID->clear();
 
     if (input.isEmpty()) {
         QMessageBox::warning(this, "提示", "请输入 ID");
@@ -138,7 +195,7 @@ void MainWindow::findByLinkedList()
     int targetId = input.toInt(&ok);
 
     if (!ok) {
-        QMessageBox::warning(this, "错误", "链表仅支持按 ID 查找");
+        QMessageBox::warning(this, "错误", "请输入合法的数字 ID");
         return;
     }
 
@@ -146,28 +203,38 @@ void MainWindow::findByLinkedList()
     timer.start();
 
     Node* node = linkedList.find(targetId);
-
     qint64 elapsed = timer.nsecsElapsed();
 
-    auto users = linkedList.list();
-    refreshUserTable(users);  // 🔹 刷新表格
-
     if (node) {
-        // 定位行
-        for (int i = 0; i < (int)users.size(); ++i) {
-            if (users[i].id == targetId) {
-                ui->tableWidget->selectRow(i);
+        // 刷新表格（链表）
+        currentUsers = linkedList.list();  // 修正这里：使用 linkedList.list()
+        
+        // 找到目标在列表中的位置，计算应显示在第几页
+        int foundIndex = -1;
+        for (int i = 0; i < (int)currentUsers.size(); ++i) {
+            if (currentUsers[i].id == targetId) {
+                foundIndex = i;
                 break;
             }
+        }
+        
+        if (foundIndex != -1) {
+            currentPage = foundIndex / pageSize;
+            refreshUserTable();
+            
+            // 定位到对应行（在当前页中的行号）
+            int rowInPage = foundIndex % pageSize;
+            ui->tableWidget->selectRow(rowInPage);
         }
 
         QMessageBox::information(
             this,
             "链表查找成功",
-            QString("ID: %1\nName: %2\n耗时: %3 ns")
+            QString("ID: %1\nName: %2\n耗时: %3 ns\n已跳转到第%4页")
                 .arg(node->data.id)
                 .arg(QString::fromStdString(node->data.name))
                 .arg(elapsed)
+                .arg(currentPage + 1)  // 页码从1开始显示
         );
     } else {
         QMessageBox::information(

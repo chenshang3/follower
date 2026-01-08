@@ -1,6 +1,6 @@
 // mainwindow.h
 #pragma once
-
+#include <vector>
 #include <QMainWindow>
 #include "model/seqlist.h"
 #include "model/linkedlist.h"
@@ -29,11 +29,17 @@ private:
     SeqList seqList;
     LinkedList linkedList;
 
+        // ---------- 分页相关（新增） ----------
+    int currentPage = 0;                 // 当前页号
+    static constexpr int pageSize = 10;  // 每页 10 条
+    std::vector<User> currentUsers;      // 当前显示的数据源
+    void refreshUserTable(); 
+    void updatePageInfo();            // 分页刷新（无参）
+    // ------------------------------------
+
     // ---------- 夜间模式相关 ----------
     bool darkModeEnabled = false;
     void applyDarkTheme();
     void applyLightTheme();
     // --------------------------------
-
-    void refreshUserTable(const std::vector<User>& users);
 };

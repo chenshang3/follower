@@ -86,6 +86,16 @@
      </widget>
     </item>
     <item>
+     <widget class="QLabel" name="labelPageInfo">
+      <property name="text">
+       <string>第1/1页，共0条</string>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignmentFlag::AlignCenter</set>
+      </property>
+     </widget>
+    </item>
+    <item>
      <layout class="QHBoxLayout" name="pageLayout">
       <item>
        <widget class="QPushButton" name="btnTheme">
