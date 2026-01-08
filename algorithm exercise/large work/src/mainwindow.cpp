@@ -19,6 +19,19 @@ MainWindow::MainWindow(QWidget *parent)
 
     // 链表查找
     connect(ui->btnFindLink, &QPushButton::clicked, this, &MainWindow::findByLinkedList);
+    // 夜间模式切换
+    connect(ui->btnTheme, &QPushButton::clicked, this, [this]() {
+    darkModeEnabled = !darkModeEnabled;
+
+    if (darkModeEnabled) {
+        applyDarkTheme();
+        ui->btnTheme->setText(QStringLiteral("🌙 夜间模式"));
+    } else {
+        applyLightTheme();
+        ui->btnTheme->setText(QStringLiteral("☀️ 日间模式"));
+    }
+});
+
 }
 
 MainWindow::~MainWindow()
@@ -68,7 +81,7 @@ void MainWindow::generateUsers()
     QMessageBox::information(
         this,
         "完成",
-        QString("成功生成 %1 条测试数据").arg(N)
+        QString("成功生成 %1 条测试数据").arg(N-1)
     );
 }
 
@@ -163,4 +176,34 @@ void MainWindow::findByLinkedList()
             QString("未找到，耗时 %1 ns").arg(elapsed)
         );
     }
+}
+
+void MainWindow::applyDarkTheme()
+{
+    QPalette dark;
+
+    dark.setColor(QPalette::Window, QColor(53, 53, 53));
+    dark.setColor(QPalette::WindowText, Qt::white);
+
+    dark.setColor(QPalette::Base, QColor(35, 35, 35));
+    dark.setColor(QPalette::AlternateBase, QColor(53, 53, 53));
+
+    dark.setColor(QPalette::ToolTipBase, Qt::white);
+    dark.setColor(QPalette::ToolTipText, Qt::white);
+
+    dark.setColor(QPalette::Text, Qt::white);
+    dark.setColor(QPalette::Button, QColor(53, 53, 53));
+    dark.setColor(QPalette::ButtonText, Qt::white);
+
+    dark.setColor(QPalette::BrightText, Qt::red);
+
+    dark.setColor(QPalette::Highlight, QColor(42, 130, 218));
+    dark.setColor(QPalette::HighlightedText, Qt::black);
+
+    qApp->setPalette(dark);
+}
+
+void MainWindow::applyLightTheme()
+{
+    qApp->setPalette(style()->standardPalette());
 }

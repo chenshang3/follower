@@ -88,6 +88,13 @@
     <item>
      <layout class="QHBoxLayout" name="pageLayout">
       <item>
+       <widget class="QPushButton" name="btnTheme">
+        <property name="text">
+         <string>🌙夜间模式</string>
+        </property>
+       </widget>
+      </item>
+      <item>
        <spacer name="horizontalSpacer">
         <property name="orientation">
          <enum>Qt::Orientation::Horizontal</enum>

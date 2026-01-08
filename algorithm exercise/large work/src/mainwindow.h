@@ -28,5 +28,12 @@ private:
 
     SeqList seqList;
     LinkedList linkedList;
+
+    // ---------- 夜间模式相关 ----------
+    bool darkModeEnabled = false;
+    void applyDarkTheme();
+    void applyLightTheme();
+    // --------------------------------
+
     void refreshUserTable(const std::vector<User>& users);
 };
